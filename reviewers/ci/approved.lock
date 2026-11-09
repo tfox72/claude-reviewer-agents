@@ -1,0 +1,11 @@
+{
+ ".claude/agents/code-reviewer.md": "13f3b1b45ad6421880b7330368131c1a12854e35565506dde16ae9d0020141c8",
+ ".claude/agents/dataviz-reviewer.md": "d8e29212b99271203f85c6e7993cec09ef9f306f7cf19794652416aa2c3cae8e",
+ ".claude/agents/document-reviewer.md": "f86d970113b9d0e77040f0e3b63ccc5f72eeb048d7e118d8208ef1914f427055",
+ ".claude/agents/fixer.md": "dfee63db9da0799d1d0a59d42f6acccc1eb14eb6b774524e6afb21b6c1f5243a",
+ ".claude/agents/independent-reviewer.md": "6daaf68851e9dc779570499a00e3e93393af51aa8045d844a442767862f906bc",
+ ".claude/agents/prepublication-reviewer.md": "d1a4fd4c2e8f24ca54e3c11fc6a5af5c3686d07584b2474fc4fa21d3363c1c5c",
+ ".claude/agents/spreadsheet-reviewer.md": "13779de0900aeb9460e9d9ffa82bfb7cc5bae5db2b22d2474dcb6ab8876fbccb",
+ ".claude/agents/web-reviewer.md": "9d0d90f72fe1827ae3e8276b7ff56bc1a90c57d3c7a1b019c9a9be99c1e5ad3f",
+ ".claude/reviewers/STANDARD.md": "84c1eb5f5ceda430f3cdf34d9bb1f890efff6dffb94cd04e042db000817cab82"
+}

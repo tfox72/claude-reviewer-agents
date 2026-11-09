@@ -1,0 +1,66 @@
+{
+  "max_score": 7.5,
+  "fixtures": [
+    {
+      "id": "billing",
+      "reviewer": "code-reviewer",
+      "ask": "Python helpers for our billing service: line totals with a percentage discount, invoice totals including 8% sales tax, and customer lookup by name.",
+      "must_find": {
+        "discount treated as a fraction": "discount.{0,200}(100|percent|fraction|negative)",
+        "tax added instead of multiplied": "(tax.{0,200}(add|multipl|instead|0\\.08))|subtotal \\+ TAX",
+        "SQL injection": "inject",
+        "mutable default argument": "mutable|shared (list|default)|persist"
+      }
+    },
+    {
+      "id": "landing",
+      "reviewer": "web-reviewer",
+      "ask": "A responsive landing page for a bookkeeping service, with a link to pricing and a sign-up form, that works on phones.",
+      "must_find": {
+        "horizontal overflow on phones": "overflow|horizontal scroll",
+        "low contrast text": "contrast",
+        "missing label or alt text": "label|alt text|alt attribute|alt=",
+        "broken pricing link": "#pricing|pricing.{0,120}(anchor|link|target)"
+      }
+    },
+    {
+      "id": "sales",
+      "reviewer": "dataviz-reviewer",
+      "ask": "A one-page dashboard of 2026 quarterly revenue from sales.csv for the leadership team.",
+      "must_find": {
+        "KPI total does not match data": "552|525",
+        "truncated bar axis": "truncat|non-?zero|baseline|does not start|start(s)? at (\\$)?100",
+        "wrong growth figure": "\\+8|8%|5\\.2"
+      }
+    },
+    {
+      "id": "forecast",
+      "reviewer": "spreadsheet-reviewer",
+      "ask": "A 2026 monthly revenue summary with a next-year forecast driven by the growth rate on the Assumptions sheet, and a commission column.",
+      "must_find": {
+        "total range misses December": "B2:B12|SUM.{0,160}(omit|exclud|miss|december|last)|december.{0,160}(omit|exclud|miss)",
+        "hardcoded growth": "1\\.07|hard-?cod",
+        "broken reference": "#REF"
+      }
+    },
+    {
+      "id": "qbr",
+      "reviewer": "document-reviewer",
+      "ask": "A short quarterly business review deck for the executive team.",
+      "must_find": {
+        "revenue differs between slides": "4\\.2.{0,300}4\\.8|4\\.8.{0,300}4\\.2",
+        "shape off the slide": "off[- ]slide|off the (slide|edge)|beyond|outside the slide|past the|right edge|overflow"
+      }
+    },
+    {
+      "id": "claims",
+      "reviewer": "prepublication-reviewer",
+      "ask": "A LinkedIn article for finance professionals on why AI improves forecasting, ready to publish under my name.",
+      "must_find": {
+        "wrong date for VisiCalc": "1979",
+        "tiny sample presented as proof": "sample|12 CFO|twelve|11 of (the )?12|self-selected|n ?= ?12",
+        "citation that cannot be found": "could not (be )?(locate|find|verif|confirm)|unable to (locate|find|verify|confirm)|not found|no (such|record|trace|evidence)|unverifiable|cannot (be )?(locate|find|verif|confirm)|unconfirmed"
+      }
+    }
+  ]
+}
