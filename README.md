@@ -17,10 +17,12 @@ Independent subagents for Claude Code that grade finished work against a 9/10 ba
 
 The main Claude Code session runs the loop, because subagents cannot launch subagents.
 
-- **Below 8.0:** the fixer and a fresh reviewer keep going without asking.
+- **Below 8.0:** the fixer and a fresh reviewer keep going without asking, with a check-in every fourth round so the loop cannot run up a large bill unnoticed.
 - **At 8.0 to 8.9:** the session notifies you and asks whether to continue to 9.0 or stop with a briefing.
 - **PASS:** 9.0 or higher, with no open blockers and no caps triggered.
-- **Early stops:** the loop asks you if it needs something only you can provide, if a blocker survives two rounds, or if the score fails to rise two rounds in a row.
+- **Early stops:** the loop asks you if it needs something only you can provide, if a blocker survives two rounds, or if two rounds in a row fail to beat the best earlier score.
+- **Every round:** the session fingerprints the work before and after the review to confirm the reviewer changed nothing, and validates the report before acting on it.
+- **Re-reviews:** a later reviewer reuses the earlier criteria and weights, and grades before it opens the earlier report, so the previous score cannot anchor it.
 
 The grading rules are in [`reviewers/STANDARD.md`](reviewers/STANDARD.md).
 
@@ -55,14 +57,14 @@ Before telling me a finished deliverable is done, send it to the matching review
 - Excel and financial models -> spreadsheet-reviewer
 - Decks, documents, writing -> document-reviewer
 - Anything else -> independent-reviewer
-If work spans two areas, use both; the lower score decides. The bar is 9/10. Below 8.0, keep fixing and sending fresh reviews with the prior report, without stopping. At 8.0 or higher, notify me and ask whether to continue to 9.0 or stop with a briefing. The full loop is in ~/.claude/reviewers/STANDARD.md. Report only the score the reviewer gave. Review finished deliverables only, not every edit or small tweak.
+If work spans two areas, use both; the lower score decides. The bar is 9/10. Below 8.0, keep fixing and sending fresh reviews with the prior report, without asking, apart from a check-in every fourth round. At 8.0 or higher, notify me and ask whether to continue to 9.0 or stop with a briefing. The full loop is in ~/.claude/reviewers/STANDARD.md. Report only the score the reviewer gave. Review finished deliverables only, not every edit or small tweak.
 For anything going public or to an outside audience, run prepublication-reviewer as the last check after the specialist passes; it is not needed for internal drafts.
 On REVISE, send the report and my original ask to the fixer agent, unless the fix is one or two small edits, then send the result to a fresh reviewer. Anything the fixer cannot finish without my input comes to me.
 ```
 
 ### Optional: check edits automatically
 
-Add this to the `PostToolUse` hooks in `~/.claude/settings.json`. It validates reviewer files whenever one is edited:
+Add this to the `PostToolUse` hooks in `~/.claude/settings.json`. It validates reviewer files whenever one is edited. Add a second copy with the matcher `Bash` to compare the lock after every shell command, since a shell command can change a file without the file tools:
 
 ```json
 {
@@ -80,12 +82,26 @@ Add this to the `PostToolUse` hooks in `~/.claude/settings.json`. It validates r
 
 ## Changing the rules
 
-Grading rules and agent instructions are locked by checksum in `reviewers/ci/approved.lock`. After you agree to a change, record it:
+The grading rules, agent instructions, CI script, answer key, and known-good test files are locked by checksum in `reviewers/ci/approved.lock`. The lock reports changes; it relies on Claude asking you before it records an approval. After you agree to a change, record it:
 
 ```bash
 python3 ~/.claude/reviewers/ci/check.py --approve
 ```
 
-More detail, including the full planted-error test, is in [`reviewers/README.md`](reviewers/README.md).
+More detail, including the full test with planted-error files and a known-good file, is in [`reviewers/README.md`](reviewers/README.md).
+
+## Other checks
+
+```bash
+python3 ~/.claude/reviewers/ci/check.py --validate <report.md>
+```
+
+Confirms a review report is complete and that its verdict, score, rubric, and blockers agree.
+
+```bash
+python3 ~/.claude/reviewers/ci/check.py --snapshot <path>
+```
+
+Prints a fingerprint of the work, ignoring caches.
 
 `reviewers/OBSTACLES.md` is a running log of tool workarounds that reviewers read before each review. Its entries reflect the Mac where they were recorded.

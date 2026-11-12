@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Create the planted-error test files in DEST, one neutral folder per fixture."""
+"""Create the test files in DEST, one neutral folder per fixture.
+
+Most hold planted errors. The folders under known_good hold sound work and are copied as they are.
+"""
 import pathlib
+import shutil
 import sys
 
 from openpyxl import Workbook
@@ -157,6 +161,9 @@ def main():
     (dest / "qbr").mkdir(parents=True, exist_ok=True)
     build_forecast(dest / "forecast" / "revenue.xlsx")
     build_qbr(dest / "qbr" / "business_review.pptx")
+    known_good = pathlib.Path(__file__).resolve().parent / "known_good"
+    for folder in sorted(p for p in known_good.iterdir() if p.is_dir()):
+        shutil.copytree(folder, dest / folder.name, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
     print(f"Staged fixtures in {dest}")
 
 

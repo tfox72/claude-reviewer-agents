@@ -27,6 +27,8 @@ Load a relevant skill as a checklist when your instructions name one and it is a
 
 Write 4 to 6 criteria with weights totaling 100%, chosen for this piece and its audience. Fix them before grading so the rubric cannot be bent to fit the work. Always include fitness for the original ask. Correctness gets the heaviest weight whenever numbers, logic, or code are involved.
 
+In a re-review, use the criteria and weights from the previous round, so that scores can be compared from round to round. `check.py --rubric` prints them (see Re-reviews). Change them only if they were wrong for this work, and say under the rubric table what you changed and why.
+
 ## 3. Verify, then score
 
 Score only what you checked. "Looks right" from reading source is not verification for anything that can be rendered, recalculated, or run.
@@ -74,7 +76,7 @@ Use exactly this format:
 # Independent Review: <work>  (Round N)
 VERDICT: PASS | REVISE | ESCALATE
 SCORE: X.X / 10   (bar: 9.0)
-Score history: <the prior report's history, then this score, or this score alone in round 1>
+Score history: <one score per round, oldest first and ending with this one, such as 2.2, 8.5, 9.1>
 Reviewer: <your name>
 Judges: <the seated experts>
 Original ask: <as given, or "not provided; assumed ...">
@@ -111,26 +113,44 @@ Weighted average: X.X.  Cap that lowered the score: <which, or none>.  Other cap
 <The matching instruction below>
 ```
 
+Save the complete report as `report.md` in your scratch directory, using a quoted heredoc (`cat > "$dir/report.md" <<'EOF'`). Then run `python3 ~/.claude/reviewers/ci/check.py --validate "$dir/report.md"` and correct anything it reports. It checks that the report is complete and that the verdict, score, rubric, and blockers agree with each other. Your final message is only the VERDICT line, the SCORE line, the full path to the report, and the validator's result. The parent reads the file.
+
 Verdicts and next steps:
 
 - **PASS** requires 9.0 or higher, no blockers, and every condition in the caps table clear. Next step: "Passed. Report this score to the user."
-- **REVISE** means below 9.0 with fixes the parent can make. The next step depends on the score:
-  - Below 8.0, or when the dispatch says the user chose to continue to 9.0: "Fix every blocker and dispatch a fresh review with this report and the original ask. Do not tell the user this is done."
-  - 8.0 to 8.9: "Checkpoint. Stop, notify the user, and ask whether to continue to 9.0 or stop here with a briefing. Do not tell the user this is done."
-- **ESCALATE** applies when the remaining gap needs something only the user can provide, such as a decision, data, a missing tool, or an export; when a blocker has survived two rounds; or when the score history shows no rise for two rounds in a row. Next step: list exactly what the user must decide or supply, and the current true score.
+- **REVISE** means below 9.0 with fixes the parent can make. Use the first next step that applies:
+  - 8.0 to 8.9, unless the dispatch says the user chose to continue to 9.0: "Checkpoint. Stop, notify the user, and ask whether to continue to 9.0 or stop here with a briefing. Do not tell the user this is done."
+  - Below 8.0 in round 4, round 8, or any later fourth round: "Round check-in. Stop, notify the user with the score history, and ask whether to keep going or stop here with a briefing. Do not tell the user this is done."
+  - Otherwise: "Fix every blocker and dispatch a fresh review with this report and the original ask. Do not tell the user this is done."
+- **ESCALATE** applies when the remaining gap needs something only the user can provide, such as a decision, data, a missing tool, or an export; when a blocker has survived two rounds; or when the last two rounds both scored at or below the best score before them. Next step: list exactly what the user must decide or supply, and the current true score.
 
 ## The review loop
 
-The parent session runs this loop, because subagents cannot launch subagents. There is no fixed round limit.
+The parent session runs this loop, because subagents cannot launch subagents. There is no fixed round limit. To notify the user, use PushNotification when that tool is available, and always ask in the chat as well.
+
+In every round:
+
+- **Fingerprint the work.** Run `python3 ~/.claude/reviewers/ci/check.py --snapshot <path(s)>` before dispatching a reviewer and again when it returns. If the fingerprint changed, the reviewer altered the work: discard that review, tell the user, and dispatch a fresh reviewer.
+- **Check the report.** Read the report file the reviewer names, and run `check.py --validate` on it yourself. If it fails, do not act on it: dispatch a fresh reviewer.
+- **Keep every report**, and give the next reviewer the path to the latest one.
+
+Then:
 
 1. **Below 8.0:** send the blockers to `fixer`, then dispatch a fresh reviewer with the latest report. Repeat without asking the user.
-2. **At 8.0 to 8.9:** stop and notify the user, using PushNotification when that tool is available and always asking in the chat as well. Give the score and ask whether to continue to 9.0 or stop here with a briefing. Then wait for the answer. This checkpoint happens once per piece of work.
-3. **If the user continues:** tell every later reviewer "The user chose to continue to 9.0", and repeat until PASS or ESCALATE.
-4. **If the user stops:** give a briefing with the current score and score history, what was fixed, each blocker still open and what it would take, what was not verified, and where the work and latest report are. Never describe stopped work as passed.
-5. **On PASS or ESCALATE at any score:** end the loop and notify the user in the same way. PASS reports the score. ESCALATE lists what the user must decide or supply.
+2. **Round check-in:** if the score is still below 8.0 at the end of round 4, and at every fourth round after it, stop and notify the user. Give the score history and roughly how many tokens the loop has used, and ask whether to keep going or stop here with a briefing. Then wait for the answer.
+3. **At 8.0 to 8.9:** stop and notify the user. Give the score and ask whether to continue to 9.0 or stop here with a briefing. Then wait for the answer. This checkpoint happens once per piece of work.
+4. **If the user continues:** tell every later reviewer "The user chose to continue to 9.0", and repeat until PASS or ESCALATE.
+5. **If the user stops:** give a briefing with the current score and score history, what was fixed, each blocker still open and what it would take, what was not verified, and where the work and latest report are. Never describe stopped work as passed.
+6. **On PASS or ESCALATE at any score:** end the loop and notify the user. PASS reports the score. ESCALATE lists what the user must decide or supply.
 
 ## Re-reviews
 
-When given a prior report, grade from scratch. Re-render, recalculate, and re-run everything, because fixes often break something else. Effort earns no credit, and a score can go down. Do not raise a new blocker just to keep the review going, and do not overlook one because this is a late round.
+When given a prior report, grade from scratch, in this order, so that the earlier score cannot pull yours toward it:
+
+1. Do not open the prior report yet. Run `python3 ~/.claude/reviewers/ci/check.py --rubric <prior report>` to get the earlier criteria and weights without their scores, and use them (section 2).
+2. Re-render, recalculate, and re-run everything, because fixes often break something else. Write down your findings and a score for each criterion.
+3. Only then read the prior report. Use it to fill in Prior findings and Score history, and to apply the Polish rule below. If reading it changes one of your criterion scores, say which one and what evidence changed it.
+
+Effort earns no credit, and a score can go down. Do not raise a new blocker just to keep the review going, and do not overlook one because this is a late round.
 
 An item listed as Polish in an earlier round stays Polish unless you have new evidence: a concrete failure that no earlier round showed. Looking harder at behavior already reported is not new evidence, and neither is being the last issue left. When you promote an item, mark it "promoted" under Prior findings and state the new evidence. Defects introduced by a fix, and defects no earlier round mentioned, can be blockers in any round.

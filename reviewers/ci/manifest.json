@@ -1,5 +1,6 @@
 {
   "max_score": 7.5,
+  "min_good_score": 8.5,
   "fixtures": [
     {
       "id": "billing",
@@ -61,6 +62,12 @@
         "tiny sample presented as proof": "sample|12 CFO|twelve|11 of (the )?12|self-selected|n ?= ?12",
         "citation that cannot be found": "could not (be )?(locate|find|verif|confirm)|unable to (locate|find|verify|confirm)|not found|no (such|record|trace|evidence)|unverifiable|cannot (be )?(locate|find|verif|confirm)|unconfirmed"
       }
+    },
+    {
+      "id": "ledger",
+      "reviewer": "code-reviewer",
+      "expect": "good",
+      "ask": "Python helpers for our billing service: line totals with a percentage discount, invoice totals including 8% sales tax, and customer lookup by name. Owner decisions: round once per invoice, half-up; the database is sqlite3; customer names are unique; negative quantities and prices are allowed, for example on credit notes, with ties on negative totals rounding away from zero, so a 2.03 charge and its credit of -2.03 cancel exactly."
     }
   ]
 }
